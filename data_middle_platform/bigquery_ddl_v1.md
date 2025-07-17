@@ -23,7 +23,7 @@ Bronze 直接落地 API 回傳原始`JSON`，以「每日讀取」或「增量�
 
 ### raw\_customers
 
-來源：`GET /v1/customers`；支援 `updated_after`、`updated_before`、`per_page`、`previous_id` 等參數以利增量大批次抓取｡ fileciteturn15file11L19-L25
+來源：`GET /v1/customers`；支援 `updated_after`、`updated_before`、`per_page`、`previous_id` 等參數以利增量大批次抓取。
 
 ```
 CREATE TABLE IF NOT EXISTS `{{project_id}}.shopline_raw.raw_customers` (
@@ -553,8 +553,8 @@ ORDER BY qty DESC;
 
 > 快速重點︰
 > １．原始訊息（每則 message event）→ NLU 推論（intent／情緒）→ 會話彙總（每日、會話級）→ 顧客對映（identity resolution）→ 行銷分析寬表｡
-> ２．顧客對映可使用 email／手機／其他識別碼透過 `customers/search` 進行補對照｡ fileciteturn15file16L41-L44
-> ３．若已知訂單包含 customer\_id，亦可在互動後根據顧客下單郵件或訊息資訊回填對映｡ fileciteturn16file4L5-L8
+> ２．顧客對映可使用 email／手機／其他識別碼透過 `customers/search` 進行補對照。
+> ３．若已知訂單包含 customer\_id，亦可在互動後根據顧客下單郵件或訊息資訊回填對映。
 
 ---
 
