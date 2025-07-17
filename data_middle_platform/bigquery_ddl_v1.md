@@ -1,6 +1,7 @@
 # BigQuery DDL 草稿
 
-說明：本文件提供以 GCP BigQuery 為主的三層式資料模型（Bronze／Silver／Gold）DDL 草稿，對應你要從 Shopline Open API 抽取之資料域，再加上 AI 客服對話與每日分類整併｡各段落皆可直接複製調整成基礎 infra；欄位型別、分區鍵、雜湊欄位請依實際數據量與下游需求微調｡
+說明：本文件提供以 GCP BigQuery 為主的三層式資料模型（Bronze／Silver／Gold）DDL 草稿，對應從 Shopline Open API 抽取之資料域，再加上`AI客服對話`與`每日分類`整併。
+各段落皆可直接複製調整成基礎 infra；欄位型別、分區鍵、雜湊欄位請依實際數據量與下游需求微調。
 
 ---
 
@@ -37,7 +38,7 @@ PARTITION BY _ingestion_date;
 
 ### raw\_orders
 
-來源：`GET /v1/orders/search`；可依條件分批抓訂單；回應內含付款、物流、金額、時間戳等欄位，適合作為增量水位｡ fileciteturn15file9L5-L10
+來源：`GET /v1/orders/search`；可依條件分批抓訂單；回應內含付款、物流、金額、時間戳等欄位，適合作為增量水位
 
 ```
 CREATE TABLE IF NOT EXISTS `{{project_id}}.shopline_raw.raw_orders` (
@@ -52,7 +53,7 @@ PARTITION BY _ingestion_date;
 
 ### raw\_products
 
-來源：`GET /v1/products`；支援欄位選擇（fields／excludes）與分頁；官方公告 2025‑07‑30 將對商品相關 API 進行重大異動，建議保留原始版本以利日後回溯｡ fileciteturn15file0L30-L36 fileciteturn15file0L7-L10
+來源：`GET /v1/products`；支援欄位選擇（fields／excludes）與分頁；官方公告 2025‑07‑30 將對商品相關 API 進行重大異動，建議保留原始版本以利日後回溯
 
 ```
 CREATE TABLE IF NOT EXISTS `{{project_id}}.shopline_raw.raw_products` (
@@ -67,7 +68,7 @@ PARTITION BY _ingestion_date;
 
 ### raw\_customer\_promotions
 
-來源：`GET /v1/customers/:customerID/promotions`；可取得顧客當前可用促銷／優惠資訊，利於行銷分群｡ fileciteturn15file1L29-L34
+來源：`GET /v1/customers/:customerID/promotions`；可取得顧客當前可用促銷／優惠資訊，利於行銷分群
 
 ```
 CREATE TABLE IF NOT EXISTS `{{project_id}}.shopline_raw.raw_customer_promotions` (
@@ -83,7 +84,7 @@ PARTITION BY _ingestion_date;
 
 ### raw\_member\_point\_rules
 
-來源：`GET /v1/member_point_rules`；提供點數賺取與到期規則等資料｡ fileciteturn15file4L17-L21
+來源：`GET /v1/member_point_rules`；提供點數賺取與到期規則等資料
 
 ```
 CREATE TABLE IF NOT EXISTS `{{project_id}}.shopline_raw.raw_member_point_rules` (
@@ -102,7 +103,7 @@ Silver 層將 Raw JSON 解析、型別化、去重後形成維度與事實表；
 
 ### dim\_customer
 
-來源欄位自 customers API；批次抓取支援 updated\_after／previous\_id，有利維護「最後版本」紀錄｡ fileciteturn15file11L19-L25
+來源欄位自 customers API；批次抓取支援 updated\_after／previous\_id，有利維護「最後版本」紀錄。
 
 ```
 CREATE TABLE IF NOT EXISTS `{{project_id}}.shopline_core.dim_customer` (
@@ -130,7 +131,7 @@ CLUSTER BY customer_id;
 
 ### dim\_customer\_contact\_index
 
-透過 customers/search 以 email、手機、關鍵字等欄位搜尋顧客；可作為身份對映（AI 對話回填）與資料校補｡ fileciteturn15file16L41-L44
+透過 customers/search 以 email、手機、關鍵字等欄位搜尋顧客；可作為身份對映（AI 對話回填）與資料校補。
 
 ```
 CREATE TABLE IF NOT EXISTS `{{project_id}}.shopline_core.dim_customer_contact_index` (
@@ -151,7 +152,7 @@ CLUSTER BY contact_hash, customer_id;
 
 ### dim\_member\_point\_rule
 
-點數規則資料；供忠誠度計算與點數推估｡ fileciteturn15file4L17-L21
+點數規則資料；供忠誠度計算與點數推估。
 
 ```
 CREATE TABLE IF NOT EXISTS `{{project_id}}.shopline_core.dim_member_point_rule` (
@@ -173,7 +174,7 @@ CLUSTER BY rule_id;
 
 ### dim\_product
 
-商品主檔；來自 /v1/products；因官方將於 2025‑07‑30 有商品相關 API 異動，建議保留 `api_version` 與欄位變異 JSON｡ fileciteturn15file0L30-L36 fileciteturn15file0L7-L10
+商品主檔；來自 /v1/products；因官方將於 2025‑07‑30 有商品相關 API 異動，建議保留 `api_version` 與欄位變異 JSON。
 
 ```
 CREATE TABLE IF NOT EXISTS `{{project_id}}.shopline_core.dim_product` (
@@ -204,7 +205,7 @@ CLUSTER BY product_id;
 
 ### dim\_product\_detail
 
-單筆深度資訊（例如多規格、庫存、圖片、描述等），可於差異時補抓；對應 /v1/products/\:id 詳情｡ fileciteturn15file10L12-L36
+單筆深度資訊（例如多規格、庫存、圖片、描述等），可於差異時補抓；對應 /v1/products/\:id 詳情。
 
 ```
 CREATE TABLE IF NOT EXISTS `{{project_id}}.shopline_core.dim_product_detail` (
@@ -230,9 +231,9 @@ CLUSTER BY product_id, variant_id;
 
 ### fact\_order\_header
 
-訂單頭資料；/v1/orders/search 回應內含訂單金額、付款、物流、時間戳等｡ fileciteturn15file9L41-L58
+訂單頭資料；/v1/orders/search 回應內含訂單金額、付款、物流、時間戳等。
 
-此外，訂單回應亦直接帶出 customer\_id（可作顧客關聯）；此點在訂單 JSON 例中可見｡ fileciteturn16file4L5-L8
+此外，訂單回應亦直接帶出 customer\_id（可作顧客關聯）；此點在訂單 JSON 例中可見。
 
 ```
 CREATE TABLE IF NOT EXISTS `{{project_id}}.shopline_core.fact_order_header` (
@@ -267,7 +268,7 @@ CLUSTER BY customer_id, order_status;
 
 ### fact\_order\_line
 
-訂單明細（展開品項）；訂單 JSON 中 subtotal\_items／promotion\_items 等欄位可拆成一列一商品，含品項價格、數量與促銷折抵｡ fileciteturn16file4L81-L90
+訂單明細（展開品項）；訂單 JSON 中 subtotal\_items／promotion\_items 等欄位可拆成一列一商品，含品項價格、數量與促銷折抵。
 
 ```
 CREATE TABLE IF NOT EXISTS `{{project_id}}.shopline_core.fact_order_line` (
@@ -292,7 +293,7 @@ CLUSTER BY order_id, product_id;
 
 ### bridge\_order\_customer
 
-雖然 fact\_order\_header 已含 customer\_id，但建立一個橋接表可加速多對多分析（包含歷史變更或匿名訂單補 mapping）。訂單 JSON 範例顯示訂單內含 customer\_id 等顧客資訊｡ fileciteturn16file4L5-L8
+雖然 fact\_order\_header 已含 customer\_id，但建立一個橋接表可加速多對多分析（包含歷史變更或匿名訂單補 mapping）。訂單 JSON 範例顯示訂單內含 customer\_id 等顧客資訊。
 
 ```
 CREATE TABLE IF NOT EXISTS `{{project_id}}.shopline_core.bridge_order_customer` (
@@ -311,7 +312,7 @@ CLUSTER BY customer_id;
 
 ### fact\_customer\_promotion\_eligibility
 
-顧客當前可用促銷清單；資料來自 /v1/customers/\:id/promotions｡ fileciteturn15file1L29-L34
+顧客當前可用促銷清單；資料來自 /v1/customers/\:id/promotions。 
 
 ```
 CREATE TABLE IF NOT EXISTS `{{project_id}}.shopline_core.fact_customer_promotion_eligibility` (
@@ -334,7 +335,7 @@ CLUSTER BY customer_id, promotion_id;
 
 ## AI 對話資料（Silver 擴充）
 
-AI 客服／聊天紀錄需與顧客身份對映；customers/search 可協助依 email、手機等欄位反查顧客，適合資料修補｡ fileciteturn15file16L41-L44
+AI 客服／聊天紀錄需與顧客身份對映；customers/search 可協助依 email、手機等欄位反查顧客，適合資料修補。
 
 ```
 CREATE TABLE IF NOT EXISTS `{{project_id}}.shopline_core.fact_ai_conversation_event` (
@@ -381,7 +382,7 @@ Gold 層針對行銷分析預先計算常用指標：RFM、購買週期、客服
 
 ### mart\_customer\_profile
 
-基本顧客資訊＋最後一次訂單時間＋最近客服互動摘要｡ 主要取材自 dim\_customer、fact\_order\_header（含時間與金額）與 AI 對話每日表｡ 訂單回應內含付款、物流與時間戳；可抓出最近一次交易｡ fileciteturn15file9L41-L58 fileciteturn16file4L5-L8
+基本顧客資訊＋最後一次訂單時間＋最近客服互動摘要｡ 主要取材自 dim\_customer、fact\_order\_header（含時間與金額）與 AI 對話每日表｡ 訂單回應內含付款、物流與時間戳；可抓出最近一次交易。
 
 ```
 CREATE TABLE IF NOT EXISTS `{{project_id}}.shopline_mart.mart_customer_profile` (
@@ -411,9 +412,9 @@ CLUSTER BY customer_id;
 
 ### mart\_customer\_rfm
 
-R、F、M 指標；可用訂單金額（total\_amount\_cents）、訂單數、最後付款／建立時間計算｡ /v1/orders/search 回應含金額與時間欄位｡ fileciteturn15file9L41-L48
+R、F、M 指標；可用訂單金額（total\_amount\_cents）、訂單數、最後付款／建立時間計算｡ /v1/orders/search 回應含金額與時間欄位。
 
-同時透過訂單內 customer\_id 建立顧客關聯｡ fileciteturn16file4L5-L8
+同時透過訂單內 customer\_id 建立顧客關聯。
 
 ```
 CREATE TABLE IF NOT EXISTS `{{project_id}}.shopline_mart.mart_customer_rfm` (
@@ -438,7 +439,7 @@ CLUSTER BY customer_id;
 
 ### mart\_customer\_purchase\_cycle
 
-以顧客歷史訂單計算平均／中位購買間隔、最近一次到本次間隔、預測下次回購日｡ 訂單回應提供 created\_at／paid\_at／updated\_at 可作時間基準｡ fileciteturn15file9L41-L58
+以顧客歷史訂單計算平均／中位購買間隔、最近一次到本次間隔、預測下次回購日｡ 訂單回應提供 created\_at／paid\_at／updated\_at 可作時間基準。
 
 ```
 CREATE TABLE IF NOT EXISTS `{{project_id}}.shopline_mart.mart_customer_purchase_cycle` (
@@ -460,9 +461,9 @@ CLUSTER BY customer_id;
 
 ### mart\_customer\_ai\_touchpoints
 
-整併每日 AI 對話與顧客關聯；customers/search 可支援資料補對映；適合分析客服互動與購買關係｡ fileciteturn15file16L41-L44
+整併每日 AI 對話與顧客關聯；customers/search 可支援資料補對映；適合分析客服互動與購買關係。
 
-```sql
+```
 CREATE TABLE IF NOT EXISTS `{{project_id}}.shopline_mart.mart_customer_ai_touchpoints` (
   snapshot_date DATE NOT NULL,
   customer_id STRING,
@@ -482,9 +483,9 @@ CLUSTER BY customer_id;
 
 ### mart\_customer\_offer\_wallet
 
-彙總顧客目前可用促銷（起訖時間、使用次數）供行銷；資料源自 /v1/customers/\:id/promotions｡ fileciteturn15file1L29-L34
+彙總顧客目前可用促銷（起訖時間、使用次數）供行銷；資料源自 /v1/customers/\:id/promotions。
 
-```sql
+```
 CREATE TABLE IF NOT EXISTS `{{project_id}}.shopline_mart.mart_customer_offer_wallet` (
   snapshot_date DATE NOT NULL,
   customer_id STRING NOT NULL,
