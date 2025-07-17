@@ -1,6 +1,6 @@
 # BigQuery DDL 草稿
 
-＞說明：本文件提供以 GCP BigQuery 為主的三層式資料模型（Bronze／Silver／Gold）DDL 草稿，對應你要從 Shopline Open API 抽取之資料域，再加上 AI 客服對話與每日分類整併｡各段落皆可直接複製調整成基礎 infra；欄位型別、分區鍵、雜湊欄位請依實際數據量與下游需求微調｡
+說明：本文件提供以 GCP BigQuery 為主的三層式資料模型（Bronze／Silver／Gold）DDL 草稿，對應你要從 Shopline Open API 抽取之資料域，再加上 AI 客服對話與每日分類整併｡各段落皆可直接複製調整成基礎 infra；欄位型別、分區鍵、雜湊欄位請依實際數據量與下游需求微調｡
 
 ---
 
