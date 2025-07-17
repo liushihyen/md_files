@@ -18,7 +18,7 @@
 
 ## Bronze 層（Raw Landing）
 
-Bronze 直接落地 API 回傳原封 JSON（NDJSON），以「每日抽」或「增量抽」檔案匯入；每列一筆 API record，並保留擷取時間與原始回應字串，方便審計及重新解析｡
+Bronze 直接落地 API 回傳原始`JSON`，以「每日讀取」或「增量讀取」檔案匯入；每列一筆 API record，並保留擷取時間與原始回應字串，方便審計及重新解析｡
 
 ### raw\_customers
 
